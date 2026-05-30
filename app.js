@@ -74,7 +74,7 @@ const SEED_BOOKS = [
 ];
 
 const DEFAULT_PROFILE = { name:'김아라', nameEn:'Ara Kim', bio:'글 쓰고 책 읽고 영상 만드는 사람 ✦ 기록으로 존재를 증명하는 중', statusBadge:'독서 중' };
-const DEFAULT_SNS = { instagram:'https://instagram.com' };
+const DEFAULT_SNS = { blog:'', instagram:'https://instagram.com', github:'' };
 
 /* ═══════════════════════════════════════
    유틸리티
@@ -454,7 +454,7 @@ function editVideo(v) {
     { label: '제목', key: 'title', type: 'text', value: v.title },
     { label: '날짜', key: 'date', type: 'text', value: v.date, placeholder: 'YYYY.MM.DD' },
     { label: 'YouTube URL', key: 'youtubeUrl', type: 'text', value: v.youtubeUrl },
-    { label: '카테고리', key: 'category', type: 'select', value: v.category, options: ['vlog','study','review'] },
+    { label: '카테고리', key: 'category', type: 'select', value: v.category, options: ['vlog','study','etc'] },
     { label: '이모지', key: 'emoji', type: 'text', value: v.emoji },
     { label: '설명', key: 'desc', type: 'textarea', value: v.desc },
     { label: '태그 (쉼표 구분)', key: 'tags', type: 'text', value: v.tags.join(', ') },
@@ -483,7 +483,7 @@ function editWriting(w) {
   openEditModal('✍️ 글 수정', [
     { label: '제목', key: 'title', type: 'text', value: w.title },
     { label: '날짜', key: 'date', type: 'text', value: w.date },
-    { label: '카테고리', key: 'category', type: 'select', value: w.category, options: ['essay','review','daily'] },
+    { label: '카테고리', key: 'category', type: 'select', value: w.category, options: ['thought','gratitude','review'] },
     { label: '태그 (쉼표 구분)', key: 'tags', type: 'text', value: w.tags.join(', ') },
     { label: '요약', key: 'excerpt', type: 'textarea', value: w.excerpt },
     { label: '본문', key: 'body', type: 'textarea', value: w.body },
@@ -545,7 +545,10 @@ function applyProfile(p) {
 
 function applySns(s) {
   document.querySelectorAll('.sns-btn').forEach(btn => {
-    if (btn.getAttribute('aria-label') === 'Instagram' && s.instagram) btn.href = s.instagram;
+    const label = btn.getAttribute('aria-label');
+    if (label === 'Blog'      && s.blog)      btn.href = s.blog;
+    if (label === 'Instagram' && s.instagram) btn.href = s.instagram;
+    if (label === 'GitHub'    && s.github)    btn.href = s.github;
   });
 }
 
@@ -576,11 +579,19 @@ document.getElementById('admEditProfile').addEventListener('click', () => {
 });
 
 document.getElementById('admEditSns').addEventListener('click', () => {
-  const ig = document.querySelector('.sns-btn[aria-label="Instagram"]')?.href || '';
+  const blogBtn = document.querySelector('.sns-btn[aria-label="Blog"]');
+  const igBtn   = document.querySelector('.sns-btn[aria-label="Instagram"]');
+  const ghBtn   = document.querySelector('.sns-btn[aria-label="GitHub"]');
+  const blog = (blogBtn?.href === location.href ? '' : blogBtn?.href) || '';
+  const ig   = (igBtn?.href   === location.href ? '' : igBtn?.href)   || '';
+  const gh   = (ghBtn?.href   === location.href ? '' : ghBtn?.href)   || '';
   openEditModal('🔗 SNS 링크', [
-    { label: 'Instagram URL', key: 'instagram', type: 'text', value: ig, placeholder: 'https://instagram.com/아이디' },
+    { label: '블로그 URL',    key: 'blog',      type: 'text', value: blog, placeholder: 'https://brunch.co.kr/@...' },
+    { label: 'Instagram URL', key: 'instagram', type: 'text', value: ig,   placeholder: 'https://instagram.com/아이디' },
+    { label: 'GitHub URL',    key: 'github',    type: 'text', value: gh,   placeholder: 'https://github.com/아이디' },
   ], async r => {
-    await dbSet('sns', 'main', { instagram: r.instagram }); applySns({ instagram: r.instagram }); toast('💾 SNS 저장');
+    const ns = { blog: r.blog, instagram: r.instagram, github: r.github };
+    await dbSet('sns', 'main', ns); applySns(ns); toast('💾 SNS 저장');
   });
 });
 
@@ -612,8 +623,12 @@ document.getElementById('folderBooks').addEventListener('click', () => {
   if (booksOpen) document.getElementById('bookshelf').scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 
-document.getElementById('booksCloseBtn').addEventListener('click', () => {
-  booksOpen = false; panelBooks.classList.remove('open');
+document.getElementById('booksCloseBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  booksOpen = false;
+  panelBooks.classList.remove('open');
+  // 스크롤을 아카이브 섹션으로 되돌리기
+  document.getElementById('archive').scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 
 document.querySelectorAll('.panel-close').forEach(btn => {
@@ -1029,3 +1044,135 @@ async function init() {
 // 병렬 로드
 Promise.all([loadProfile(), loadSns(), loadPhotos(), loadTracks()]);
 init();
+
+/* ═══════════════════════════════════════
+   프사 선택 기능 (갤러리에서 선택)
+═══════════════════════════════════════ */
+
+/** 갤러리에서 프사 선택 모드 */
+function openGalleryForAvatar() {
+  // 갤러리가 비어있으면 안내
+  if (!GALLERY_DATA.length) {
+    toast('먼저 갤러리에 사진을 추가해주세요', 'error');
+    return;
+  }
+
+  document.getElementById('editModal')?.remove();
+  const modal = document.createElement('div');
+  modal.id = 'editModal';
+  modal.className = 'modal-overlay open';
+
+  modal.innerHTML = `
+    <div class="modal edit-modal">
+      <button class="modal-close" id="editModalClose">✕</button>
+      <h3 class="edit-modal-title">🖼️ 프로필 사진 선택</h3>
+      <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:16px;">사진을 클릭하면 프로필 사진으로 설정돼요</p>
+      <div class="avatar-picker-grid" id="avatarPickerGrid"></div>
+    </div>`;
+
+  document.body.appendChild(modal);
+  document.body.style.overflow = 'hidden';
+
+  const grid = modal.querySelector('#avatarPickerGrid');
+  grid.innerHTML = GALLERY_DATA.map(p => `
+    <div class="avatar-pick-item" data-url="${p.url}">
+      <img src="${p.url}" alt="">
+    </div>`).join('');
+
+  grid.querySelectorAll('.avatar-pick-item').forEach(item => {
+    item.addEventListener('click', async () => {
+      const url = item.dataset.url;
+      setAvatarPhoto(url);
+      // Firebase에 저장
+      const snap = await getDocs(collection(db, 'profile'));
+      const current = snap.empty ? DEFAULT_PROFILE : snap.docs[0].data();
+      await dbSet('profile', 'main', { ...current, avatarUrl: url });
+      toast('✅ 프로필 사진 변경 완료!');
+      modal.remove();
+      document.body.style.overflow = '';
+    });
+  });
+
+  modal.querySelector('#editModalClose').addEventListener('click', () => {
+    modal.remove(); document.body.style.overflow = '';
+  });
+  modal.addEventListener('click', e => {
+    if (e.target === modal) { modal.remove(); document.body.style.overflow = ''; }
+  });
+}
+
+/** 아바타 사진 DOM에 적용 */
+function setAvatarPhoto(url) {
+  const avatarEl = document.getElementById('avatarBtn');
+  if (!url) return;
+  // SVG 일러스트 대신 실제 사진으로 교체
+  avatarEl.innerHTML = `
+    <img src="${url}" alt="프로필 사진" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+    <div class="disc-album-art" id="discAlbumArt" style="display:none"></div>`;
+}
+
+// 아바타 클릭 동작 재정의 — 편집 모드면 선택, 아니면 갤러리 보기
+document.getElementById('avatarBtn').addEventListener('click', () => {
+  if (isAdminMode) {
+    openGalleryForAvatar();
+  } else {
+    renderProfileGallery();
+    show(document.getElementById('profileGalleryModal'));
+    document.body.style.overflow = 'hidden';
+  }
+}, true); // capture phase로 기존 리스너보다 먼저 실행
+
+// 프로필 로드 시 아바타 URL 반영
+const _origLoadProfile = loadProfile;
+loadProfile = async function() {
+  try {
+    const snap = await getDocs(collection(db, 'profile'));
+    if (!snap.empty) {
+      const data = snap.docs[0].data();
+      applyProfile(data);
+      if (data.avatarUrl) setAvatarPhoto(data.avatarUrl);
+    } else {
+      await dbSet('profile', 'main', DEFAULT_PROFILE);
+      applyProfile(DEFAULT_PROFILE);
+    }
+  } catch (e) { console.error(e); }
+};
+
+/* ═══════════════════════════════════════
+   관심사 태그 편집
+═══════════════════════════════════════ */
+
+/** Firebase에서 관심사 로드 */
+async function loadInterests() {
+  try {
+    const snap = await getDocs(collection(db, 'interests'));
+    if (!snap.empty) {
+      const data = snap.docs[0].data();
+      applyInterests(data.tags || []);
+    }
+  } catch (e) { console.error(e); }
+}
+
+/** 관심사 DOM 반영 */
+function applyInterests(tags) {
+  const el = document.getElementById('interestsTags');
+  if (!el || !tags.length) return;
+  el.innerHTML = tags.map(t => `<span class="interest-tag">${t}</span>`).join('');
+}
+
+// 편집 모드에서 관심사 클릭 → 편집
+document.getElementById('interestsTags')?.addEventListener('click', () => {
+  if (!isAdminMode) return;
+  const currentTags = [...document.querySelectorAll('.interest-tag')].map(el => el.textContent).join(', ');
+  openEditModal('✦ 관심사 수정', [
+    { label: '태그 (쉼표로 구분)', key: 'tags', type: 'textarea', value: currentTags, placeholder: '☕ 커피, 📚 독서, 🎵 음악' },
+  ], async r => {
+    const tags = r.tags.split(',').map(t => t.trim()).filter(Boolean);
+    await dbSet('interests', 'main', { tags });
+    applyInterests(tags);
+    toast('💾 관심사 저장 완료');
+  });
+});
+
+// 초기 로드에 관심사 + 아바타 추가
+loadInterests();

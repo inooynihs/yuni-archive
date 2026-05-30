@@ -1878,3 +1878,115 @@ button { cursor: pointer; border: none; background: none; font: inherit; color: 
 .upload-bar-wrap { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 6px; }
 .upload-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 2px; transition: width .2s; }
 .upload-pct { font-size: .75rem; color: var(--text-faint); text-align: right; }
+
+/* ── 관심사 태그 ── */
+.interests-section {
+  margin-bottom: 14px;
+}
+
+.interests-label {
+  font-size: .72rem;
+  color: var(--text-faint);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.interests-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  cursor: default;
+}
+
+.admin-mode .interests-tags {
+  cursor: pointer;
+  outline: 2px dashed color-mix(in srgb, var(--accent) 30%, transparent);
+  outline-offset: 6px;
+  border-radius: var(--radius-sm);
+}
+
+.admin-mode .interests-tags:hover {
+  outline-color: var(--accent);
+}
+
+.interest-tag {
+  font-size: .78rem;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: var(--bg-alt);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  transition: all .2s;
+}
+
+.interest-tag:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+
+/* ── 아바타 선택 그리드 ── */
+.avatar-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.avatar-pick-item {
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  border: 2.5px solid var(--border);
+  transition: all .2s var(--ease);
+}
+
+.avatar-pick-item:hover {
+  border-color: var(--accent);
+  transform: scale(1.04);
+  box-shadow: var(--shadow-md);
+}
+
+.avatar-pick-item img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+
+/* 편집 모드 아바타 힌트 */
+.admin-mode #avatarBtn::after {
+  content: '✏️';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.35);
+  border-radius: 50%;
+  font-size: 1.4rem;
+  opacity: 0;
+  transition: opacity .2s;
+}
+.admin-mode #avatarBtn:hover::after { opacity: 1; }
+
+/* 음악 버튼 색상 */
+.adm-btn-music {
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+}
+.adm-btn-music:hover {
+  background: color-mix(in srgb, var(--accent-2) 10%, transparent);
+}
+
+/* 트랙 관리 아이템 */
+.track-manage-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--bg-alt);
+  border-radius: var(--radius-sm);
+  gap: 12px;
+}
+.track-manage-info {
+  font-size: .85rem;
+  flex: 1;
+}
