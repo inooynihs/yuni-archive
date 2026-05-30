@@ -755,7 +755,7 @@ document.getElementById('statTotalCard').addEventListener('click', () => {
   });
   const years = Object.keys(grouped).sort((a,b) => b.localeCompare(a));
 
-  const renderAllBooks = (filterYear = 'all') => {
+  const renderAllBooks = (filterYear = 'all', adminFlag = isAdminMode) => {
     const filtered = filterYear === 'all' ? grouped : { [filterYear]: grouped[filterYear] || [] };
     return Object.entries(filtered).sort((a,b) => b[0].localeCompare(a[0])).map(([year, books]) => `
       <div class="all-books-year">
@@ -770,7 +770,7 @@ document.getElementById('statTotalCard').addEventListener('click', () => {
             </div>
             <div class="all-books-actions">
               <button class="all-books-open" title="상세 보기">📖</button>
-              ${isAdminMode ? `<button class="all-books-del" title="삭제">🗑️</button>` : ''}
+              <button class="all-books-del" title="삭제" style="display:${adminFlag ? 'flex' : 'none'}">🗑️</button>
             </div>
           </div>`).join('')}
       </div>`).join('') || '<p style="color:var(--text-faint);text-align:center;padding:20px;">읽은 책이 없어요</p>';
@@ -784,7 +784,7 @@ document.getElementById('statTotalCard').addEventListener('click', () => {
       <button class="modal-close" id="editModalClose">✕</button>
       <h3 class="edit-modal-title">📚 전체 독서 기록</h3>
       <div class="bookshelf-year-tabs" style="margin-bottom:16px;">${yearTabsHtml}</div>
-      <div class="edit-fields all-books-list" id="allBooksList">${renderAllBooks()}</div>
+      <div class="edit-fields all-books-list" id="allBooksList">${renderAllBooks('all', isAdminMode)}</div>
     </div>`;
   document.body.appendChild(modal); document.body.style.overflow = 'hidden';
   const close = () => { modal.remove(); document.body.style.overflow = ''; };
@@ -796,7 +796,7 @@ document.getElementById('statTotalCard').addEventListener('click', () => {
     tab.addEventListener('click', () => {
       modal.querySelectorAll('.year-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-      modal.querySelector('#allBooksList').innerHTML = renderAllBooks(tab.dataset.year);
+      modal.querySelector('#allBooksList').innerHTML = renderAllBooks(tab.dataset.year, isAdminMode);
       modal.querySelectorAll('.all-books-item').forEach(item => {
         item.addEventListener('click', () => { close(); openBookModal(item.dataset.bid); });
       });
