@@ -462,28 +462,51 @@ document.getElementById('admEditProfile').addEventListener('click', async () => 
   const current = snap.empty ? {} : snap.docs[0].data();
   const hasPhoto = !!current.avatarUrl;
 
-  // 프사 삭제 버튼 별도 처리
   document.getElementById('editModal')?.remove();
-  const modal = document.createElement('div'); modal.id = 'editModal'; modal.className = 'modal-overlay open';
-
-  const fieldsHtml = [
-    { label: '이름 (한글)', key: 'name',        value: document.querySelector('.profile-name')?.childNodes[0]?.textContent?.trim() || '' },
-    { label: '이름 (영문)', key: 'nameEn',       value: document.querySelector('.name-en')?.textContent || '' },
-    { label: '한줄 소개',   key: 'bio',          value: document.querySelector('.profile-bio')?.textContent || '', textarea: true },
-    { label: '상태 배지',   key: 'statusBadge',  value: document.querySelector('.status-text')?.textContent || '' },
-  ].map(f => `<div class="edit-field"><label class="edit-label">${f.label}</label>${f.textarea ? `<textarea class="edit-input edit-textarea" data-key="${f.key}" rows="3">${f.value}</textarea>` : `<input type="text" class="edit-input" data-key="${f.key}" value="${f.value}">`}</div>`).join('');
-
-  const avatarSection = hasPhoto
-    ? `<div class="edit-field"><label class="edit-label">프로필 사진</label><button class="edit-delete-avatar-btn" id="deleteAvatarBtn">🗑️ 프로필 사진 삭제</button></div>`
-    : `<div class="edit-field"><label class="edit-label">프로필 사진</label><p style="font-size:.78rem;color:var(--text-faint);">갤러리에서 사진을 선택해주세요</p></div>`;
+  const modal = document.createElement('div');
+  modal.id = 'editModal';
+  modal.className = 'modal-overlay open';
 
   modal.innerHTML = `
     <div class="modal edit-modal">
       <button class="modal-close" id="editModalClose">✕</button>
       <h3 class="edit-modal-title">👤 프로필 수정</h3>
       <div class="edit-fields">
-        ${fieldsHtml}
-        ${avatarSection}
+
+        <!-- 프로필 사진 섹션 -->
+        <div class="edit-field">
+          <label class="edit-label">프로필 사진</label>
+          <div class="avatar-edit-section">
+            <div class="avatar-edit-preview" id="avatarEditPreview">
+              ${hasPhoto
+                ? `<img src="${current.avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+                : DEFAULT_AVATAR_SVG}
+            </div>
+            <div class="avatar-edit-btns">
+              <button class="avatar-action-btn" id="selectAvatarBtn">📷 사진 선택</button>
+              ${hasPhoto ? `<button class="avatar-action-btn danger" id="deleteAvatarBtn">🗑️ 사진 삭제</button>` : ''}
+            </div>
+          </div>
+        </div>
+
+        <!-- 텍스트 필드 -->
+        <div class="edit-field">
+          <label class="edit-label">이름 (한글)</label>
+          <input type="text" class="edit-input" data-key="name" value="${document.querySelector('.profile-name')?.childNodes[0]?.textContent?.trim() || ''}">
+        </div>
+        <div class="edit-field">
+          <label class="edit-label">이름 (영문)</label>
+          <input type="text" class="edit-input" data-key="nameEn" value="${document.querySelector('.name-en')?.textContent || ''}">
+        </div>
+        <div class="edit-field">
+          <label class="edit-label">한줄 소개</label>
+          <textarea class="edit-input edit-textarea" data-key="bio" rows="3">${document.querySelector('.profile-bio')?.textContent || ''}</textarea>
+        </div>
+        <div class="edit-field">
+          <label class="edit-label">상태 배지</label>
+          <input type="text" class="edit-input" data-key="statusBadge" value="${document.querySelector('.status-text')?.textContent || ''}">
+        </div>
+
       </div>
       <div class="edit-modal-footer">
         <button class="edit-cancel-btn" id="editCancel">취소</button>
@@ -491,27 +514,71 @@ document.getElementById('admEditProfile').addEventListener('click', async () => 
       </div>
     </div>`;
 
-  document.body.appendChild(modal); document.body.style.overflow = 'hidden';
+  document.body.appendChild(modal);
+  document.body.style.overflow = 'hidden';
+
+  let pendingAvatarUrl = current.avatarUrl || null;
+  let deleteAvatar = false;
+
   const close = () => { modal.remove(); document.body.style.overflow = ''; };
   modal.querySelector('#editModalClose').addEventListener('click', close);
   modal.querySelector('#editCancel').addEventListener('click', close);
   modal.addEventListener('click', e => { if (e.target === modal) close(); });
 
-  // 프사 삭제 버튼
-  modal.querySelector('#deleteAvatarBtn')?.addEventListener('click', async () => {
+  // 사진 선택 버튼 → 갤러리 팝업
+  modal.querySelector('#selectAvatarBtn').addEventListener('click', () => {
+    if (!GALLERY_DATA.length) { toast('먼저 갤러리에 사진을 추가해주세요', 'error'); return; }
+
+    // 갤러리 선택 미니 모달
+    const pickerModal = document.createElement('div');
+    pickerModal.className = 'modal-overlay open';
+    pickerModal.style.zIndex = '1100';
+    pickerModal.innerHTML = `
+      <div class="modal edit-modal">
+        <button class="modal-close" id="pickerClose">✕</button>
+        <h3 class="edit-modal-title">🖼️ 사진 선택</h3>
+        <div class="avatar-picker-grid">
+          ${GALLERY_DATA.map(p => `<div class="avatar-pick-item" data-url="${p.url}"><img src="${p.url}" alt=""></div>`).join('')}
+        </div>
+      </div>`;
+    document.body.appendChild(pickerModal);
+
+    pickerModal.querySelector('#pickerClose').addEventListener('click', () => pickerModal.remove());
+    pickerModal.addEventListener('click', e => { if (e.target === pickerModal) pickerModal.remove(); });
+    pickerModal.querySelectorAll('.avatar-pick-item').forEach(item => {
+      item.addEventListener('click', () => {
+        pendingAvatarUrl = item.dataset.url;
+        deleteAvatar = false;
+        // 미리보기 업데이트
+        modal.querySelector('#avatarEditPreview').innerHTML = `<img src="${pendingAvatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+        pickerModal.remove();
+        toast('✅ 사진 선택됨 — 저장 버튼을 눌러주세요');
+      });
+    });
+  });
+
+  // 사진 삭제 버튼
+  modal.querySelector('#deleteAvatarBtn')?.addEventListener('click', () => {
     if (!confirm('프로필 사진을 삭제할까요?')) return;
-    const np = { ...current }; delete np.avatarUrl;
-    await dbSet('profile', 'main', np);
-    resetAvatar();
-    toast('🗑️ 프로필 사진 삭제 완료');
-    close();
+    pendingAvatarUrl = null;
+    deleteAvatar = true;
+    modal.querySelector('#avatarEditPreview').innerHTML = DEFAULT_AVATAR_SVG;
+    toast('사진이 선택 해제됐어요. 저장하면 적용돼요');
   });
 
   // 저장
   modal.querySelector('#editConfirm').addEventListener('click', async () => {
-    const r = {}; modal.querySelectorAll('[data-key]').forEach(el => { r[el.dataset.key] = el.value; });
+    const r = {};
+    modal.querySelectorAll('[data-key]').forEach(el => { r[el.dataset.key] = el.value; });
     const np = { ...current, name: r.name, nameEn: r.nameEn, bio: r.bio, statusBadge: r.statusBadge };
-    await dbSet('profile', 'main', np); applyProfile(np); toast('💾 프로필 저장'); close();
+    if (deleteAvatar) delete np.avatarUrl;
+    else if (pendingAvatarUrl) np.avatarUrl = pendingAvatarUrl;
+    await dbSet('profile', 'main', np);
+    applyProfile(np);
+    if (deleteAvatar) resetAvatar();
+    else if (pendingAvatarUrl) setAvatarPhoto(pendingAvatarUrl);
+    toast('💾 프로필 저장 완료');
+    close();
   });
 });
 
@@ -602,11 +669,15 @@ document.getElementById('folderPhotos').addEventListener('click', () => togglePa
 // 서재 폴더 클릭 → 서재 섹션 토글
 const bookshelfSection = document.getElementById('bookshelf');
 let bookshelfVisible = false;
+bookshelfSection.style.display = 'none'; // 초기 숨김 강제
+
 document.getElementById('folderBooks').addEventListener('click', () => {
+  // 다른 패널 닫기
+  Object.values(folderPanels).forEach(p => hide(p));
   bookshelfVisible = !bookshelfVisible;
   bookshelfSection.style.display = bookshelfVisible ? 'block' : 'none';
   if (bookshelfVisible) {
-    bookshelfSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => bookshelfSection.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   }
 });
 
@@ -697,6 +768,10 @@ document.getElementById('statTotalCard').addEventListener('click', () => {
               <p class="all-books-author">${b.author} · ${renderStars(b.stars)}</p>
               <p class="all-books-date">${b.date}</p>
             </div>
+            <div class="all-books-actions">
+              <button class="all-books-open" title="상세 보기">📖</button>
+              <button class="all-books-del"  title="삭제">🗑️</button>
+            </div>
           </div>`).join('')}
       </div>`).join('') || '<p style="color:var(--text-faint);text-align:center;padding:20px;">읽은 책이 없어요</p>';
   };
@@ -728,9 +803,26 @@ document.getElementById('statTotalCard').addEventListener('click', () => {
     });
   });
 
-  modal.querySelectorAll('.all-books-item').forEach(item => {
-    item.addEventListener('click', () => { close(); openBookModal(item.dataset.bid); });
-  });
+  const bindAllBooksItems = () => {
+    modal.querySelectorAll('.all-books-item').forEach(item => {
+      item.querySelector('.all-books-open')?.addEventListener('click', e => {
+        e.stopPropagation(); close(); openBookModal(item.dataset.bid);
+      });
+      item.querySelector('.all-books-del')?.addEventListener('click', async e => {
+        e.stopPropagation();
+        if (!confirm('이 책을 삭제할까요?')) return;
+        await dbDel('books', item.dataset.bid);
+        BOOK_DATA = BOOK_DATA.filter(b => b.id !== item.dataset.bid);
+        renderBookshelf(); updateRecentTicker();
+        toast('🗑️ 삭제 완료');
+        // 모달 내용 갱신
+        const curTab = modal.querySelector('.year-tab.active')?.dataset.year || 'all';
+        modal.querySelector('#allBooksList').innerHTML = renderAllBooks(curTab);
+        bindAllBooksItems();
+      });
+    });
+  };
+  bindAllBooksItems();
 });
 
 function createBookSpine(b) {
