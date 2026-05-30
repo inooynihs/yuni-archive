@@ -990,11 +990,6 @@ document.getElementById('footerYear').textContent = new Date().getFullYear();
 async function init() {
   showLoading();
   try {
-    await Promise.all([
-      seedIfEmpty('videos', SEED_VIDEOS),
-      seedIfEmpty('writings', SEED_WRITINGS),
-      seedIfEmpty('books', SEED_BOOKS),
-    ]);
     const [videos, writings, books] = await Promise.all([
       dbGetAll('videos'), dbGetAll('writings'), dbGetAll('books'),
     ]);
