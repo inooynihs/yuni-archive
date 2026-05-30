@@ -2142,3 +2142,19 @@ button { cursor: pointer; border: none; background: none; font: inherit; color: 
   font-size: .7rem;
   color: var(--text-faint);
 }
+
+/* ── 프사 삭제 버튼 ── */
+.edit-delete-avatar-btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid #c0392b;
+  color: #c0392b;
+  background: none;
+  font-size: .82rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .2s;
+}
+.edit-delete-avatar-btn:hover {
+  background: #fde8e8;
+}

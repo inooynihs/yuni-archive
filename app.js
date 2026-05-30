@@ -39,12 +39,12 @@ const SEED_WRITINGS = [
   { id:'w4', title:'오늘 하루 감사한 것들', date:'2025.04.01', category:'gratitude', tags:['감사','일상'], excerpt:'작은 것들에 감사하는 연습을 시작했다.', body:'<p>커피 한 잔, 햇빛, 좋아하는 음악.</p>' },
 ];
 const SEED_BOOKS = [
-  { id:'b1', title:'채식주의자', author:'한강', date:'2025.05.20', stars:5, color:'#2d6a4f', width:24, quote:'인간이라는 사실이, 이렇게 수치스러울 수 없었다.', memo:'두 번째로 읽었다.' },
-  { id:'b2', title:'82년생 김지영', author:'조남주', date:'2025.05.05', stars:4, color:'#e07a5f', width:20, quote:'그래도 나는 내 딸이 자유롭게 꿈꾸길 바랐다.', memo:'픽션인데 픽션이 아닌 이야기.' },
-  { id:'b3', title:'아몬드', author:'손원평', date:'2025.04.28', stars:5, color:'#c77dff', width:22, quote:'괴물이 되는 건 쉽다. 사람이 되는 건 어렵다.', memo:'감정이 무엇인지 생각하게 만드는 책.' },
-  { id:'b4', title:'데미안', author:'헤르만 헤세', date:'2025.04.15', stars:4, color:'#457b9d', width:18, quote:'새는 알을 깨고 나온다.', memo:'스무 살과 서른에 읽는 것이 다르다.' },
-  { id:'b5', title:'파친코', author:'이민진', date:'2025.02.28', stars:5, color:'#e63946', width:28, quote:'역사는 우리를 저버렸다. 하지만 그래도 상관없다.', memo:'4대에 걸친 가족 이야기.' },
-  { id:'b6', title:'작별하지 않는다', author:'한강', date:'2025.01.18', stars:5, color:'#264653', width:23, quote:'우리는 어떻게 애도해야 하는가.', memo:'읽는 내내 숨을 참았다.' },
+  { id:'b1', title:'채식주의자', author:'한강', date:'2026.05.20', stars:5, color:'#2d6a4f', width:24, quote:'인간이라는 사실이, 이렇게 수치스러울 수 없었다.', memo:'두 번째로 읽었다.' },
+  { id:'b2', title:'82년생 김지영', author:'조남주', date:'2026.05.05', stars:4, color:'#e07a5f', width:20, quote:'그래도 나는 내 딸이 자유롭게 꿈꾸길 바랐다.', memo:'픽션인데 픽션이 아닌 이야기.' },
+  { id:'b3', title:'아몬드', author:'손원평', date:'2026.04.28', stars:5, color:'#c77dff', width:22, quote:'괴물이 되는 건 쉽다. 사람이 되는 건 어렵다.', memo:'감정이 무엇인지 생각하게 만드는 책.' },
+  { id:'b4', title:'데미안', author:'헤르만 헤세', date:'2026.04.15', stars:4, color:'#457b9d', width:18, quote:'새는 알을 깨고 나온다.', memo:'스무 살과 서른에 읽는 것이 다르다.' },
+  { id:'b5', title:'파친코', author:'이민진', date:'2026.02.28', stars:5, color:'#e63946', width:28, quote:'역사는 우리를 저버렸다. 하지만 그래도 상관없다.', memo:'4대에 걸친 가족 이야기.' },
+  { id:'b6', title:'작별하지 않는다', author:'한강', date:'2026.01.18', stars:5, color:'#264653', width:23, quote:'우리는 어떻게 애도해야 하는가.', memo:'읽는 내내 숨을 참았다.' },
 ];
 const DEFAULT_PROFILE = { name:'김아라', nameEn:'Ara Kim', bio:'글 쓰고 책 읽고 영상 만드는 사람 ✦ 기록으로 존재를 증명하는 중', statusBadge:'독서 중' };
 const DEFAULT_SNS = { blog:'', instagram:'', github:'' };
@@ -451,24 +451,67 @@ async function loadSns() {
   } catch (e) { console.error(e); }
 }
 
-document.getElementById('admEditProfile').addEventListener('click', () => {
-  openEditModal('👤 프로필 수정', [
-    { label: '이름 (한글)', key: 'name', type: 'text', value: document.querySelector('.profile-name')?.childNodes[0]?.textContent?.trim() || '' },
-    { label: '이름 (영문)', key: 'nameEn', type: 'text', value: document.querySelector('.name-en')?.textContent || '' },
-    { label: '한줄 소개', key: 'bio', type: 'textarea', value: document.querySelector('.profile-bio')?.textContent || '' },
-    { label: '상태 배지', key: 'statusBadge', type: 'text', value: document.querySelector('.status-text')?.textContent || '' },
-    { label: '프사 삭제 (yes 입력 시 기본 아바타로)', key: 'deleteAvatar', type: 'text', placeholder: 'yes 입력하면 삭제' },
-  ], async r => {
-    const snap = await getDocs(collection(db, 'profile'));
-    const current = snap.empty ? {} : snap.docs[0].data();
+const DEFAULT_AVATAR_SVG = `<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="60" cy="60" r="60" fill="var(--avatar-bg)"/><ellipse cx="60" cy="88" rx="28" ry="18" fill="var(--avatar-body)"/><circle cx="60" cy="52" r="22" fill="var(--avatar-skin)"/><path d="M38 50 Q40 28 60 30 Q80 28 82 50 Q78 36 60 38 Q42 36 38 50Z" fill="var(--avatar-hair)"/><circle cx="52" cy="50" r="3" fill="var(--avatar-eye)"/><circle cx="68" cy="50" r="3" fill="var(--avatar-eye)"/><circle cx="53.5" cy="48.5" r="1" fill="white"/><circle cx="69.5" cy="48.5" r="1" fill="white"/><ellipse cx="46" cy="55" rx="5" ry="3" fill="var(--avatar-blush)" opacity="0.5"/><ellipse cx="74" cy="55" rx="5" ry="3" fill="var(--avatar-blush)" opacity="0.5"/><path d="M54 60 Q60 65 66 60" stroke="var(--avatar-eye)" stroke-width="1.5" stroke-linecap="round" fill="none"/><rect x="30" y="78" width="18" height="14" rx="2" fill="var(--accent)" opacity="0.8"/><line x1="39" y1="78" x2="39" y2="92" stroke="white" stroke-width="1" opacity="0.5"/><path d="M48 48 Q52 44 56 48 M64 48 Q68 44 72 48" stroke="var(--avatar-eye)" stroke-width="1.2" fill="none"/><line x1="56" y1="48" x2="64" y2="48" stroke="var(--avatar-eye)" stroke-width="1.2"/></svg>`;
+
+function resetAvatar() {
+  document.getElementById('avatarBtn').innerHTML = DEFAULT_AVATAR_SVG;
+}
+
+document.getElementById('admEditProfile').addEventListener('click', async () => {
+  const snap = await getDocs(collection(db, 'profile'));
+  const current = snap.empty ? {} : snap.docs[0].data();
+  const hasPhoto = !!current.avatarUrl;
+
+  // 프사 삭제 버튼 별도 처리
+  document.getElementById('editModal')?.remove();
+  const modal = document.createElement('div'); modal.id = 'editModal'; modal.className = 'modal-overlay open';
+
+  const fieldsHtml = [
+    { label: '이름 (한글)', key: 'name',        value: document.querySelector('.profile-name')?.childNodes[0]?.textContent?.trim() || '' },
+    { label: '이름 (영문)', key: 'nameEn',       value: document.querySelector('.name-en')?.textContent || '' },
+    { label: '한줄 소개',   key: 'bio',          value: document.querySelector('.profile-bio')?.textContent || '', textarea: true },
+    { label: '상태 배지',   key: 'statusBadge',  value: document.querySelector('.status-text')?.textContent || '' },
+  ].map(f => `<div class="edit-field"><label class="edit-label">${f.label}</label>${f.textarea ? `<textarea class="edit-input edit-textarea" data-key="${f.key}" rows="3">${f.value}</textarea>` : `<input type="text" class="edit-input" data-key="${f.key}" value="${f.value}">`}</div>`).join('');
+
+  const avatarSection = hasPhoto
+    ? `<div class="edit-field"><label class="edit-label">프로필 사진</label><button class="edit-delete-avatar-btn" id="deleteAvatarBtn">🗑️ 프로필 사진 삭제</button></div>`
+    : `<div class="edit-field"><label class="edit-label">프로필 사진</label><p style="font-size:.78rem;color:var(--text-faint);">갤러리에서 사진을 선택해주세요</p></div>`;
+
+  modal.innerHTML = `
+    <div class="modal edit-modal">
+      <button class="modal-close" id="editModalClose">✕</button>
+      <h3 class="edit-modal-title">👤 프로필 수정</h3>
+      <div class="edit-fields">
+        ${fieldsHtml}
+        ${avatarSection}
+      </div>
+      <div class="edit-modal-footer">
+        <button class="edit-cancel-btn" id="editCancel">취소</button>
+        <button class="edit-save-btn" id="editConfirm">저장</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal); document.body.style.overflow = 'hidden';
+  const close = () => { modal.remove(); document.body.style.overflow = ''; };
+  modal.querySelector('#editModalClose').addEventListener('click', close);
+  modal.querySelector('#editCancel').addEventListener('click', close);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+  // 프사 삭제 버튼
+  modal.querySelector('#deleteAvatarBtn')?.addEventListener('click', async () => {
+    if (!confirm('프로필 사진을 삭제할까요?')) return;
+    const np = { ...current }; delete np.avatarUrl;
+    await dbSet('profile', 'main', np);
+    resetAvatar();
+    toast('🗑️ 프로필 사진 삭제 완료');
+    close();
+  });
+
+  // 저장
+  modal.querySelector('#editConfirm').addEventListener('click', async () => {
+    const r = {}; modal.querySelectorAll('[data-key]').forEach(el => { r[el.dataset.key] = el.value; });
     const np = { ...current, name: r.name, nameEn: r.nameEn, bio: r.bio, statusBadge: r.statusBadge };
-    if (r.deleteAvatar?.toLowerCase() === 'yes') {
-      delete np.avatarUrl;
-      // 기본 SVG 아바타로 복원
-      const el = document.getElementById('avatarBtn');
-      el.innerHTML = `<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="60" cy="60" r="60" fill="var(--avatar-bg)"/><ellipse cx="60" cy="88" rx="28" ry="18" fill="var(--avatar-body)"/><circle cx="60" cy="52" r="22" fill="var(--avatar-skin)"/><path d="M38 50 Q40 28 60 30 Q80 28 82 50 Q78 36 60 38 Q42 36 38 50Z" fill="var(--avatar-hair)"/><circle cx="52" cy="50" r="3" fill="var(--avatar-eye)"/><circle cx="68" cy="50" r="3" fill="var(--avatar-eye)"/><circle cx="53.5" cy="48.5" r="1" fill="white"/><circle cx="69.5" cy="48.5" r="1" fill="white"/><ellipse cx="46" cy="55" rx="5" ry="3" fill="var(--avatar-blush)" opacity="0.5"/><ellipse cx="74" cy="55" rx="5" ry="3" fill="var(--avatar-blush)" opacity="0.5"/><path d="M54 60 Q60 65 66 60" stroke="var(--avatar-eye)" stroke-width="1.5" stroke-linecap="round" fill="none"/><rect x="30" y="78" width="18" height="14" rx="2" fill="var(--accent)" opacity="0.8"/><line x1="39" y1="78" x2="39" y2="92" stroke="white" stroke-width="1" opacity="0.5"/><path d="M48 48 Q52 44 56 48 M64 48 Q68 44 72 48" stroke="var(--avatar-eye)" stroke-width="1.2" fill="none"/><line x1="56" y1="48" x2="64" y2="48" stroke="var(--avatar-eye)" stroke-width="1.2"/></svg>`;
-    }
-    await dbSet('profile', 'main', np); applyProfile(np); toast('💾 프로필 저장');
+    await dbSet('profile', 'main', np); applyProfile(np); toast('💾 프로필 저장'); close();
   });
 });
 
@@ -556,6 +599,17 @@ document.getElementById('folderVideo').addEventListener('click',  () => togglePa
 document.getElementById('folderWrite').addEventListener('click',  () => togglePanel('writing'));
 document.getElementById('folderPhotos').addEventListener('click', () => togglePanel('photos'));
 
+// 서재 폴더 클릭 → 서재 섹션 토글
+const bookshelfSection = document.getElementById('bookshelf');
+let bookshelfVisible = false;
+document.getElementById('folderBooks').addEventListener('click', () => {
+  bookshelfVisible = !bookshelfVisible;
+  bookshelfSection.style.display = bookshelfVisible ? 'block' : 'none';
+  if (bookshelfVisible) {
+    bookshelfSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+});
+
 document.querySelectorAll('.panel-close').forEach(btn => {
   btn.addEventListener('click', () => { const type = btn.dataset.close; if (folderPanels[type]) hide(folderPanels[type]); });
 });
@@ -611,12 +665,10 @@ function updateBookStats() {
   document.getElementById('statThisYear').textContent  = yearBooks.length;
   document.getElementById('statThisMonth').textContent = monthBooks.length;
   document.getElementById('statTotal').textContent     = BOOK_DATA.length;
+  const bfc = document.getElementById('bookFolderCount');
+  if (bfc) bfc.textContent = `읽은 책 ${BOOK_DATA.length}권`;
 
-  const counts = Array(12).fill(0);
-  yearBooks.forEach(b => { const m = parseInt(b.date.split('.')[1]) - 1; if (m >= 0 && m < 12) counts[m]++; });
-  const max = Math.max(...counts, 1);
-  const months = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
-  document.getElementById('barChart').innerHTML = counts.map((c, i) => `<div class="bar-col"><div class="bar-fill" style="height:${(c/max)*100}%" title="${months[i]}: ${c}권"></div><span class="bar-label">${months[i]}</span></div>`).join('');
+
 }
 
 /** 전체 기록 모달 */
@@ -630,24 +682,52 @@ document.getElementById('statTotalCard').addEventListener('click', () => {
     if (!grouped[year]) grouped[year] = [];
     grouped[year].push(b);
   });
-  const listHtml = Object.entries(grouped).sort((a,b) => b[0].localeCompare(a[0])).map(([year, books]) => `
-    <div class="all-books-year">
-      <h4 class="all-books-year-label">${year}년 · ${books.length}권</h4>
-      ${books.map(b => `
-        <div class="all-books-item" data-bid="${b.id}">
-          <div class="all-books-cover" style="background:${b.color}"></div>
-          <div class="all-books-info">
-            <p class="all-books-title">${b.title}</p>
-            <p class="all-books-author">${b.author} · ${renderStars(b.stars)}</p>
-            <p class="all-books-date">${b.date}</p>
-          </div>
-        </div>`).join('')}
-    </div>`).join('');
-  modal.innerHTML = `<div class="modal edit-modal" style="max-width:600px;"><button class="modal-close" id="editModalClose">✕</button><h3 class="edit-modal-title">📚 전체 독서 기록 (${BOOK_DATA.length}권)</h3><div class="edit-fields all-books-list">${listHtml || '<p style="color:var(--text-faint);text-align:center;padding:20px;">아직 읽은 책이 없어요</p>'}</div></div>`;
+  const years = Object.keys(grouped).sort((a,b) => b.localeCompare(a));
+
+  const renderAllBooks = (filterYear = 'all') => {
+    const filtered = filterYear === 'all' ? grouped : { [filterYear]: grouped[filterYear] || [] };
+    return Object.entries(filtered).sort((a,b) => b[0].localeCompare(a[0])).map(([year, books]) => `
+      <div class="all-books-year">
+        <h4 class="all-books-year-label">${year}년 · ${books.length}권</h4>
+        ${books.map(b => `
+          <div class="all-books-item" data-bid="${b.id}">
+            <div class="all-books-cover" style="background:${b.color}"></div>
+            <div class="all-books-info">
+              <p class="all-books-title">${b.title}</p>
+              <p class="all-books-author">${b.author} · ${renderStars(b.stars)}</p>
+              <p class="all-books-date">${b.date}</p>
+            </div>
+          </div>`).join('')}
+      </div>`).join('') || '<p style="color:var(--text-faint);text-align:center;padding:20px;">읽은 책이 없어요</p>';
+  };
+
+  const yearTabsHtml = `<button class="year-tab active" data-year="all">전체 (${BOOK_DATA.length}권)</button>` +
+    years.map(y => `<button class="year-tab" data-year="${y}">${y}년 (${grouped[y].length}권)</button>`).join('');
+
+  modal.innerHTML = `
+    <div class="modal edit-modal" style="max-width:600px;">
+      <button class="modal-close" id="editModalClose">✕</button>
+      <h3 class="edit-modal-title">📚 전체 독서 기록</h3>
+      <div class="bookshelf-year-tabs" style="margin-bottom:16px;">${yearTabsHtml}</div>
+      <div class="edit-fields all-books-list" id="allBooksList">${renderAllBooks()}</div>
+    </div>`;
   document.body.appendChild(modal); document.body.style.overflow = 'hidden';
   const close = () => { modal.remove(); document.body.style.overflow = ''; };
   modal.querySelector('#editModalClose').addEventListener('click', close);
   modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+  // 연도 필터 탭
+  modal.querySelectorAll('.year-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      modal.querySelectorAll('.year-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      modal.querySelector('#allBooksList').innerHTML = renderAllBooks(tab.dataset.year);
+      modal.querySelectorAll('.all-books-item').forEach(item => {
+        item.addEventListener('click', () => { close(); openBookModal(item.dataset.bid); });
+      });
+    });
+  });
+
   modal.querySelectorAll('.all-books-item').forEach(item => {
     item.addEventListener('click', () => { close(); openBookModal(item.dataset.bid); });
   });
