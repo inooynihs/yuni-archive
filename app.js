@@ -770,7 +770,7 @@ document.getElementById('statTotalCard').addEventListener('click', () => {
             </div>
             <div class="all-books-actions">
               <button class="all-books-open" title="상세 보기">📖</button>
-              <button class="all-books-del"  title="삭제">🗑️</button>
+              ${isAdminMode ? `<button class="all-books-del" title="삭제">🗑️</button>` : ''}
             </div>
           </div>`).join('')}
       </div>`).join('') || '<p style="color:var(--text-faint);text-align:center;padding:20px;">읽은 책이 없어요</p>';
