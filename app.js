@@ -210,7 +210,7 @@ async function seedIfEmpty(colName, seedData) {
 ════════════════════════════════════════════════════ */
 
 // ★ 비밀번호를 여기서 변경하세요
-const ADMIN_PASSWORD = 'heing@97';
+const ADMIN_PASSWORD = '1234';
 
 let isAdminMode = false;
 
@@ -1000,3 +1000,232 @@ async function initWithProfile() {
 }
 // DOMContentLoaded 이후 실행
 initWithProfile();
+
+/* ═══════════════════════════════════════════════════
+   📷 사진 기능 (추가분)
+   - 프로필 아바타 클릭 → 갤러리 팝업
+   - 사진 폴더 → 사진 그리드 → 라이트박스
+   - 편집 모드에서 사진 추가/삭제
+════════════════════════════════════════════════════ */
+
+let PHOTO_DATA    = [];   // 전체 사진 (폴더용)
+let GALLERY_DATA  = [];   // 프로필 갤러리용 사진
+let lightboxIndex = 0;    // 현재 라이트박스 인덱스
+
+/* ── Firestore에서 사진 로드 ── */
+async function loadPhotos() {
+  try {
+    const [photoSnap, gallerySnap] = await Promise.all([
+      getDocs(collection(db, 'photos')),
+      getDocs(collection(db, 'gallery')),
+    ]);
+    PHOTO_DATA   = photoSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    GALLERY_DATA = gallerySnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    renderPhotoGrid();
+    renderProfileGallery();
+    updatePhotoFolderCount();
+  } catch(e) { console.error('사진 로드 실패', e); }
+}
+
+/* ── 사진 폴더 카운트 업데이트 ── */
+function updatePhotoFolderCount() {
+  const el = document.getElementById('photoFolderCount');
+  if (el) el.textContent = `사진 ${PHOTO_DATA.length}장`;
+}
+
+/* ── 사진 그리드 렌더링 ── */
+function renderPhotoGrid() {
+  const grid = document.getElementById('photoGrid');
+  if (!grid) return;
+
+  if (PHOTO_DATA.length === 0) {
+    grid.innerHTML = `<div class="photo-empty">
+      <p>아직 사진이 없어요</p>
+      <p style="font-size:.78rem;color:var(--text-faint);margin-top:6px;">편집 모드에서 ＋ 사진 추가를 눌러주세요</p>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = PHOTO_DATA.map((p, i) => `
+    <div class="photo-item" data-index="${i}">
+      <div class="admin-item-btns">
+        <button class="admin-del-btn" data-pid="${p.id}">🗑️</button>
+      </div>
+      <img src="${p.url}" alt="${p.caption||''}" loading="lazy">
+      ${p.caption ? `<p class="photo-caption">${p.caption}</p>` : ''}
+    </div>`).join('');
+
+  // 클릭 → 라이트박스
+  grid.querySelectorAll('.photo-item').forEach(item => {
+    item.addEventListener('click', e => {
+      if (e.target.closest('.admin-item-btns')) return;
+      openLightbox(PHOTO_DATA, parseInt(item.dataset.index));
+    });
+  });
+
+  // 삭제 버튼
+  grid.querySelectorAll('.admin-del-btn').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      if (!confirm('이 사진을 삭제할까요?')) return;
+      await dbDelete('photos', btn.dataset.pid);
+      PHOTO_DATA = PHOTO_DATA.filter(p => p.id !== btn.dataset.pid);
+      renderPhotoGrid();
+      updatePhotoFolderCount();
+      toast('🗑️ 사진 삭제 완료');
+    });
+  });
+}
+
+/* ── 프로필 갤러리 렌더링 ── */
+function renderProfileGallery() {
+  const grid = document.getElementById('profileGalleryGrid');
+  if (!grid) return;
+
+  if (GALLERY_DATA.length === 0) {
+    grid.innerHTML = `<div class="photo-empty">
+      <p>갤러리 사진이 없어요</p>
+      <p style="font-size:.78rem;color:var(--text-faint);margin-top:6px;">편집 모드에서 ＋ 갤러리 사진 추가를 눌러주세요</p>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = GALLERY_DATA.map((p, i) => `
+    <div class="photo-item" data-index="${i}">
+      <div class="admin-item-btns">
+        <button class="admin-del-btn" data-gid="${p.id}">🗑️</button>
+      </div>
+      <img src="${p.url}" alt="${p.caption||''}" loading="lazy">
+    </div>`).join('');
+
+  // 클릭 → 라이트박스
+  grid.querySelectorAll('.photo-item').forEach(item => {
+    item.addEventListener('click', e => {
+      if (e.target.closest('.admin-item-btns')) return;
+      openLightbox(GALLERY_DATA, parseInt(item.dataset.index));
+    });
+  });
+
+  // 삭제 버튼
+  grid.querySelectorAll('.admin-del-btn').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      if (!confirm('이 사진을 삭제할까요?')) return;
+      await dbDelete('gallery', btn.dataset.gid);
+      GALLERY_DATA = GALLERY_DATA.filter(p => p.id !== btn.dataset.gid);
+      renderProfileGallery();
+      toast('🗑️ 갤러리 사진 삭제 완료');
+    });
+  });
+}
+
+/* ── 라이트박스 ── */
+function openLightbox(dataArr, index) {
+  lightboxIndex = index;
+  const modal = document.getElementById('lightboxModal');
+  updateLightbox(dataArr);
+  show(modal);
+  document.body.style.overflow = 'hidden';
+
+  // 방향키 지원
+  const keyHandler = e => {
+    if (e.key === 'ArrowLeft')  { lightboxIndex = (lightboxIndex - 1 + dataArr.length) % dataArr.length; updateLightbox(dataArr); }
+    if (e.key === 'ArrowRight') { lightboxIndex = (lightboxIndex + 1) % dataArr.length; updateLightbox(dataArr); }
+    if (e.key === 'Escape')     { closeLightbox(); document.removeEventListener('keydown', keyHandler); }
+  };
+  document.addEventListener('keydown', keyHandler);
+
+  document.getElementById('lightboxPrev').onclick = () => {
+    lightboxIndex = (lightboxIndex - 1 + dataArr.length) % dataArr.length;
+    updateLightbox(dataArr);
+  };
+  document.getElementById('lightboxNext').onclick = () => {
+    lightboxIndex = (lightboxIndex + 1) % dataArr.length;
+    updateLightbox(dataArr);
+  };
+}
+
+function updateLightbox(dataArr) {
+  const p = dataArr[lightboxIndex];
+  document.getElementById('lightboxImg').src          = p.url;
+  document.getElementById('lightboxCaption').textContent = p.caption || '';
+}
+
+function closeLightbox() {
+  hide(document.getElementById('lightboxModal'));
+  document.body.style.overflow = '';
+}
+
+document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+document.getElementById('lightboxModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('lightboxModal')) closeLightbox();
+});
+
+/* ── 프로필 아바타 클릭 → 갤러리 팝업 ── */
+const avatarBtn = document.getElementById('avatarBtn');
+const profileGalleryModal = document.getElementById('profileGalleryModal');
+
+avatarBtn.addEventListener('click', () => {
+  renderProfileGallery();
+  show(profileGalleryModal);
+  document.body.style.overflow = 'hidden';
+});
+
+document.getElementById('profileGalleryClose').addEventListener('click', () => {
+  hide(profileGalleryModal);
+  document.body.style.overflow = '';
+});
+
+profileGalleryModal.addEventListener('click', e => {
+  if (e.target === profileGalleryModal) {
+    hide(profileGalleryModal);
+    document.body.style.overflow = '';
+  }
+});
+
+/* ── 사진 폴더 열기 ── */
+folderPanels.photos = document.getElementById('panelPhotos');
+document.getElementById('folderPhotos').addEventListener('click', () => togglePanel('photos'));
+
+/* ── 툴바에 사진 추가 버튼 ── */
+const photoAddBtns = document.createElement('div');
+photoAddBtns.innerHTML = `
+  <button class="adm-btn" id="admAddPhoto">＋ 사진 추가</button>
+  <button class="adm-btn" id="admAddGallery">＋ 갤러리 사진</button>`;
+document.querySelector('.admin-toolbar-btns').appendChild(photoAddBtns);
+
+/* ── 사진 추가 (URL 입력) ── */
+document.getElementById('admAddPhoto').addEventListener('click', () => {
+  openEditModal('📷 사진 추가', [
+    { label: '이미지 URL', key: 'url',     type: 'text',     placeholder: 'https://...' },
+    { label: '캡션 (선택)', key: 'caption', type: 'text',     placeholder: '사진 설명' },
+    { label: '날짜 (선택)', key: 'date',    type: 'text',     placeholder: 'YYYY.MM.DD' },
+  ], async (r) => {
+    if (!r.url) { toast('URL을 입력해주세요', 'error'); return; }
+    const newP = { id: 'p' + uid(), url: r.url, caption: r.caption, date: r.date };
+    await dbSet('photos', newP.id, newP);
+    PHOTO_DATA.unshift(newP);
+    renderPhotoGrid();
+    updatePhotoFolderCount();
+    toast('📷 사진 추가 완료');
+  });
+});
+
+/* ── 갤러리 사진 추가 ── */
+document.getElementById('admAddGallery').addEventListener('click', () => {
+  openEditModal('🖼️ 갤러리 사진 추가', [
+    { label: '이미지 URL', key: 'url', type: 'text', placeholder: 'https://...' },
+    { label: '캡션 (선택)', key: 'caption', type: 'text', placeholder: '사진 설명' },
+  ], async (r) => {
+    if (!r.url) { toast('URL을 입력해주세요', 'error'); return; }
+    const newG = { id: 'g' + uid(), url: r.url, caption: r.caption };
+    await dbSet('gallery', newG.id, newG);
+    GALLERY_DATA.unshift(newG);
+    renderProfileGallery();
+    toast('🖼️ 갤러리 사진 추가 완료');
+  });
+});
+
+// 초기 로드
+loadPhotos();

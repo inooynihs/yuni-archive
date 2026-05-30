@@ -63,7 +63,7 @@
       <div class="profile-card" data-reveal>
         <!-- 아바타 -->
         <div class="avatar-wrap">
-          <div class="avatar">
+          <div class="avatar" id="avatarBtn" title="📷 사진 갤러리" style="cursor:pointer;">
             <!-- SVG 기반 일러스트 아바타 -->
             <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
               <circle cx="60" cy="60" r="60" fill="var(--avatar-bg)"/>
@@ -223,6 +223,21 @@
             <div class="line-preview"></div>
             <div class="line-preview short"></div>
             <div class="line-preview"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 사진 폴더 ── -->
+      <div class="folder-card" id="folderPhotos" data-folder="photos">
+        <div class="folder-tab"></div>
+        <div class="folder-body">
+          <div class="folder-icon">📷</div>
+          <h3 class="folder-title">사진</h3>
+          <p class="folder-count" id="photoFolderCount">사진 0장</p>
+          <div class="folder-preview">
+            <div class="preview-thumb" style="background:linear-gradient(135deg,#fda4af,#fb7185)"></div>
+            <div class="preview-thumb" style="background:linear-gradient(135deg,#86efac,#4ade80)"></div>
+            <div class="preview-thumb" style="background:linear-gradient(135deg,#93c5fd,#60a5fa)"></div>
           </div>
         </div>
       </div>
@@ -390,6 +405,37 @@
     <div class="search-results-inner">
       <p class="search-results-title">검색 결과</p>
       <div id="searchResultsList"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       사진 패널
+  ════════════════════════════════════════════ -->
+  <div class="content-panel" id="panelPhotos">
+    <div class="panel-header">
+      <h3>📷 사진 아카이브</h3>
+      <button class="panel-close" data-close="photos">✕</button>
+    </div>
+    <div class="photo-grid" id="photoGrid"></div>
+  </div>
+
+  <!-- 프로필 갤러리 모달 -->
+  <div class="modal-overlay" id="profileGalleryModal">
+    <div class="modal profile-gallery-modal">
+      <button class="modal-close" id="profileGalleryClose">✕</button>
+      <h3 class="gallery-modal-title">📷 갤러리</h3>
+      <div class="profile-gallery-grid" id="profileGalleryGrid"></div>
+    </div>
+  </div>
+
+  <!-- 사진 라이트박스 -->
+  <div class="modal-overlay" id="lightboxModal">
+    <div class="lightbox-inner">
+      <button class="modal-close lightbox-close" id="lightboxClose">✕</button>
+      <button class="lightbox-nav prev" id="lightboxPrev">‹</button>
+      <img class="lightbox-img" id="lightboxImg" src="" alt="">
+      <button class="lightbox-nav next" id="lightboxNext">›</button>
+      <p class="lightbox-caption" id="lightboxCaption"></p>
     </div>
   </div>
 
