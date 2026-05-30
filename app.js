@@ -210,7 +210,7 @@ async function seedIfEmpty(colName, seedData) {
 ════════════════════════════════════════════════════ */
 
 // ★ 비밀번호를 여기서 변경하세요
-const ADMIN_PASSWORD = '1234';
+const ADMIN_PASSWORD = 'heing@97';
 
 let isAdminMode = false;
 
