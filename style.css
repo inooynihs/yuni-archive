@@ -2312,3 +2312,11 @@ button { cursor: pointer; border: none; background: none; font: inherit; color: 
 
 .all-books-open:hover { background: var(--accent-light); border-color: var(--accent); }
 .all-books-del:hover  { background: #fde8e8; border-color: #e74c3c; }
+
+/* ── 편집 모드에서만 보이는 요소 ── */
+.admin-only {
+  display: none !important;
+}
+.admin-mode .admin-only {
+  display: flex !important;
+}
