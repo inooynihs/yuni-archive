@@ -175,12 +175,16 @@
 
     <!-- 최근 업데이트 배너 -->
     <div class="recent-banner" data-reveal>
-      <span class="recent-label">✦ 최근 업데이트</span>
-      <div class="recent-ticker" id="recentTicker">
-        <span>📹 새 영상 업로드 — 「교토에서 보낸 3일」</span>
-        <span>✍️ 새 글 — 「서울의 카페를 전부 가봤다」</span>
-        <span>📚 독서 완료 — 「채식주의자 / 한강」</span>
-        <span>📹 새 영상 업로드 — 「나만의 독서 루틴」</span>
+      <div class="recent-label-wrap">
+        <span class="recent-label">✦ 최근 업데이트</span>
+      </div>
+      <div class="recent-ticker-wrap">
+        <div class="recent-ticker" id="recentTicker">
+          <span>📹 새 영상 업로드 — 「교토에서 보낸 3일」</span>
+          <span>✍️ 새 글 — 「서울의 카페를 전부 가봤다」</span>
+          <span>📚 독서 완료 — 「채식주의자 / 한강」</span>
+          <span>📹 새 영상 업로드 — 「나만의 독서 루틴」</span>
+        </div>
       </div>
     </div>
   </section>
@@ -238,20 +242,17 @@
         </div>
       </div>
 
-      <!-- 독서 기록 폴더 -->
-      <div class="folder-card featured" id="folderBooks" data-folder="books">
+      <!-- 무드보드 폴더 -->
+      <div class="folder-card featured" id="folderMood" data-folder="mood">
         <div class="folder-tab"></div>
         <div class="folder-body">
-          <div class="folder-icon">📚</div>
-          <h3 class="folder-title">독서 기록</h3>
-          <p class="folder-count" id="bookFolderCount">올해 읽은 책 0권</p>
-          <div class="folder-spine-preview">
-            <div class="spine" style="background:#e07b54;width:12px;"></div>
-            <div class="spine" style="background:#5c7cfa;width:9px;"></div>
-            <div class="spine" style="background:#82c91e;width:11px;"></div>
-            <div class="spine" style="background:#f06595;width:8px;"></div>
-            <div class="spine" style="background:#339af0;width:13px;"></div>
-            <div class="spine" style="background:#ffd43b;width:10px;"></div>
+          <div class="folder-icon">🎨</div>
+          <h3 class="folder-title">무드보드</h3>
+          <p class="folder-count" id="moodFolderCount">이미지 0장</p>
+          <div class="folder-preview">
+            <div class="preview-thumb" style="background:linear-gradient(135deg,#f8c8d4,#e8a0b0)"></div>
+            <div class="preview-thumb" style="background:linear-gradient(135deg,#c8d8f8,#a0b8e8)"></div>
+            <div class="preview-thumb" style="background:linear-gradient(135deg,#d8f8c8,#a0e8b0)"></div>
           </div>
         </div>
       </div>
@@ -288,6 +289,15 @@
     <div class="writing-list" id="writingList"></div>
   </div>
 
+  <!-- 무드보드 패널 -->
+  <div class="content-panel" id="panelMoodboard">
+    <div class="panel-header">
+      <h3>🎨 무드보드</h3>
+      <button class="panel-close" data-close="moodboard">✕</button>
+    </div>
+    <div class="photo-grid" id="moodboardGrid"></div>
+  </div>
+
   <!-- 사진 패널 -->
   <div class="content-panel" id="panelPhotos">
     <div class="panel-header">
@@ -295,6 +305,16 @@
       <button class="panel-close" data-close="photos">✕</button>
     </div>
     <div class="photo-grid" id="photoGrid"></div>
+  </div>
+
+  <!-- 무드보드 패널 -->
+  <div class="content-panel" id="panelMood">
+    <div class="panel-header">
+      <h3>🎨 무드보드</h3>
+      <button class="panel-close" data-close="mood">✕</button>
+    </div>
+    <p class="mood-desc" id="moodDesc">영감을 주는 이미지들을 모아두는 공간이에요 ✦</p>
+    <div class="mood-grid" id="moodGrid"></div>
   </div>
 
   <!-- 독서 기록 섹션 (폴더 클릭으로 열고 닫기) -->

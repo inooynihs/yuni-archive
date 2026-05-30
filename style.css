@@ -1990,3 +1990,46 @@ button { cursor: pointer; border: none; background: none; font: inherit; color: 
   font-size: .85rem;
   flex: 1;
 }
+
+/* ── 최근 업데이트 배너 개선 (겹침 방지) ── */
+.recent-banner {
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+}
+
+.recent-label-wrap {
+  flex-shrink: 0;
+  padding-right: 16px;
+  border-right: 1px solid var(--border);
+  margin-right: 16px;
+}
+
+.recent-ticker-wrap {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* 좌우 페이드 효과 */
+.recent-ticker-wrap::before,
+.recent-ticker-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 30px;
+  z-index: 1;
+  pointer-events: none;
+}
+.recent-ticker-wrap::before {
+  left: 0;
+  background: linear-gradient(to right, var(--bg-card), transparent);
+}
+.recent-ticker-wrap::after {
+  right: 0;
+  background: linear-gradient(to left, var(--bg-card), transparent);
+}
+
+.recent-ticker {
+  white-space: nowrap;
+  width: max-content;
+}

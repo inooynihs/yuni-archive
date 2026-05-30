@@ -599,9 +599,10 @@ document.getElementById('admEditSns').addEventListener('click', () => {
    폴더 패널
 ═══════════════════════════════════════ */
 const folderPanels = {
-  video:   document.getElementById('panelVideo'),
-  writing: document.getElementById('panelWriting'),
-  photos:  document.getElementById('panelPhotos'),
+  video:      document.getElementById('panelVideo'),
+  writing:    document.getElementById('panelWriting'),
+  photos:     document.getElementById('panelPhotos'),
+  moodboard:  document.getElementById('panelMoodboard'),
 };
 const panelBooks = document.getElementById('panelBooks');
 
@@ -613,15 +614,10 @@ function togglePanel(type) {
   if (!isOpen) { show(p); p.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 }
 
-document.getElementById('folderVideo').addEventListener('click',  () => togglePanel('video'));
-document.getElementById('folderWrite').addEventListener('click',  () => togglePanel('writing'));
-document.getElementById('folderPhotos').addEventListener('click', () => togglePanel('photos'));
-
-document.getElementById('folderBooks').addEventListener('click', () => {
-  booksOpen = !booksOpen;
-  panelBooks.classList.toggle('open', booksOpen);
-  if (booksOpen) document.getElementById('bookshelf').scrollIntoView({ behavior: 'smooth', block: 'start' });
-});
+document.getElementById('folderVideo').addEventListener('click',      () => togglePanel('video'));
+document.getElementById('folderWrite').addEventListener('click',      () => togglePanel('writing'));
+document.getElementById('folderPhotos').addEventListener('click',     () => togglePanel('photos'));
+document.getElementById('folderMoodboard').addEventListener('click',  () => togglePanel('moodboard'));
 
 document.getElementById('booksCloseBtn').addEventListener('click', (e) => {
   e.stopPropagation();
@@ -1176,3 +1172,77 @@ document.getElementById('interestsTags')?.addEventListener('click', () => {
 
 // 초기 로드에 관심사 + 아바타 추가
 loadInterests();
+
+
+/* ═══════════════════════════════════════
+   🎨 무드보드
+═══════════════════════════════════════ */
+let MOODBOARD_DATA = [];
+
+async function loadMoodboard() {
+  try {
+    MOODBOARD_DATA = await dbGetAll('moodboard');
+    renderMoodboard();
+    updateMoodboardCount();
+  } catch (e) { console.error(e); }
+}
+
+function updateMoodboardCount() {
+  const el = document.getElementById('moodboardFolderCount');
+  if (el) el.textContent = `이미지 ${MOODBOARD_DATA.length}장`;
+}
+
+function renderMoodboard() {
+  const g = document.getElementById('moodboardGrid');
+  if (!g) return;
+  if (!MOODBOARD_DATA.length) {
+    g.innerHTML = `<div class="photo-empty"><p>아직 이미지가 없어요 🎨</p><p style="font-size:.78rem;color:var(--text-faint);margin-top:6px;">편집 모드 → ＋ 무드보드</p></div>`;
+    return;
+  }
+  g.innerHTML = MOODBOARD_DATA.map((p, i) => `
+    <div class="photo-item" data-index="${i}">
+      <div class="admin-item-btns"><button class="admin-del-btn" data-mid="${p.id}">🗑️</button></div>
+      <img src="${p.url}" alt="${p.caption || ''}" loading="lazy">
+      ${p.caption ? `<p class="photo-caption">${p.caption}</p>` : ''}
+    </div>`).join('');
+  g.querySelectorAll('.photo-item').forEach(item => {
+    item.addEventListener('click', e => { if (e.target.closest('.admin-item-btns')) return; openLightbox(MOODBOARD_DATA, parseInt(item.dataset.index)); });
+  });
+  g.querySelectorAll('.admin-del-btn').forEach(b => {
+    b.addEventListener('click', async e => {
+      e.stopPropagation();
+      if (!confirm('삭제할까요?')) return;
+      await dbDel('moodboard', b.dataset.mid);
+      MOODBOARD_DATA = MOODBOARD_DATA.filter(p => p.id !== b.dataset.mid);
+      renderMoodboard(); updateMoodboardCount(); toast('🗑️ 삭제');
+    });
+  });
+}
+
+// 툴바에 무드보드 버튼 추가
+const moodboardBtn = document.createElement('button');
+moodboardBtn.className = 'adm-btn';
+moodboardBtn.id = 'admAddMoodboard';
+moodboardBtn.textContent = '＋ 무드보드';
+document.querySelector('.admin-toolbar-btns').appendChild(moodboardBtn);
+
+document.getElementById('admAddMoodboard').addEventListener('click', () => {
+  openEditModal('🎨 무드보드 이미지 추가', [
+    { label: '캡션 (선택)', key: 'caption', type: 'text', placeholder: '이미지 설명' },
+  ], r => {
+    pickFile('image/*', async file => {
+      showUploadProgress(file.name);
+      try {
+        const { url, path } = await uploadFile(file, 'moodboard', p => updateUploadProgress(p));
+        hideUploadProgress();
+        const np = { id: 'm' + uid(), url, path, caption: r.caption || '' };
+        await dbSet('moodboard', np.id, np);
+        MOODBOARD_DATA.unshift(np);
+        renderMoodboard(); updateMoodboardCount();
+        toast('🎨 무드보드 추가 완료!');
+      } catch (e) { hideUploadProgress(); toast('❌ 업로드 실패', 'error'); console.error(e); }
+    });
+  });
+});
+
+loadMoodboard();
