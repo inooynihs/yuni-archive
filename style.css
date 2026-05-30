@@ -2033,3 +2033,112 @@ button { cursor: pointer; border: none; background: none; font: inherit; color: 
   white-space: nowrap;
   width: max-content;
 }
+
+/* ── 연도별 책장 탭 ── */
+.bookshelf-year-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.year-tab {
+  padding: 6px 18px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  font-size: .82rem;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all .2s;
+  font-family: inherit;
+}
+
+.year-tab:hover, .year-tab.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}
+
+/* ── 서재 레이아웃 줄이기 ── */
+.bookshelf-section { padding: 32px 0 60px; }
+.bookshelf-panel { padding-top: 24px; }
+
+/* 책 한 줄에 더 많이 */
+.shelf-row {
+  min-height: 120px !important;
+  padding: 8px 16px 0 !important;
+}
+
+.book-spine {
+  height: 100px !important;
+}
+
+/* 전체기록 카드 클릭 가능 스타일 */
+.stat-card-clickable {
+  cursor: pointer;
+  transition: all .2s !important;
+}
+.stat-card-clickable:hover {
+  border-color: var(--accent) !important;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* 전체 기록 목록 */
+.all-books-list {
+  max-height: 500px;
+  overflow-y: auto;
+  gap: 0 !important;
+}
+
+.all-books-year {
+  margin-bottom: 20px;
+}
+
+.all-books-year-label {
+  font-size: .78rem;
+  color: var(--text-faint);
+  letter-spacing: .06em;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.all-books-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.all-books-item:hover { background: var(--bg-alt); }
+
+.all-books-cover {
+  width: 36px; height: 48px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.all-books-info { flex: 1; }
+
+.all-books-title {
+  font-size: .88rem;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.all-books-author {
+  font-size: .75rem;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.all-books-date {
+  font-size: .7rem;
+  color: var(--text-faint);
+}

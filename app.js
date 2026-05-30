@@ -457,10 +457,17 @@ document.getElementById('admEditProfile').addEventListener('click', () => {
     { label: '이름 (영문)', key: 'nameEn', type: 'text', value: document.querySelector('.name-en')?.textContent || '' },
     { label: '한줄 소개', key: 'bio', type: 'textarea', value: document.querySelector('.profile-bio')?.textContent || '' },
     { label: '상태 배지', key: 'statusBadge', type: 'text', value: document.querySelector('.status-text')?.textContent || '' },
+    { label: '프사 삭제 (yes 입력 시 기본 아바타로)', key: 'deleteAvatar', type: 'text', placeholder: 'yes 입력하면 삭제' },
   ], async r => {
     const snap = await getDocs(collection(db, 'profile'));
     const current = snap.empty ? {} : snap.docs[0].data();
     const np = { ...current, name: r.name, nameEn: r.nameEn, bio: r.bio, statusBadge: r.statusBadge };
+    if (r.deleteAvatar?.toLowerCase() === 'yes') {
+      delete np.avatarUrl;
+      // 기본 SVG 아바타로 복원
+      const el = document.getElementById('avatarBtn');
+      el.innerHTML = `<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="60" cy="60" r="60" fill="var(--avatar-bg)"/><ellipse cx="60" cy="88" rx="28" ry="18" fill="var(--avatar-body)"/><circle cx="60" cy="52" r="22" fill="var(--avatar-skin)"/><path d="M38 50 Q40 28 60 30 Q80 28 82 50 Q78 36 60 38 Q42 36 38 50Z" fill="var(--avatar-hair)"/><circle cx="52" cy="50" r="3" fill="var(--avatar-eye)"/><circle cx="68" cy="50" r="3" fill="var(--avatar-eye)"/><circle cx="53.5" cy="48.5" r="1" fill="white"/><circle cx="69.5" cy="48.5" r="1" fill="white"/><ellipse cx="46" cy="55" rx="5" ry="3" fill="var(--avatar-blush)" opacity="0.5"/><ellipse cx="74" cy="55" rx="5" ry="3" fill="var(--avatar-blush)" opacity="0.5"/><path d="M54 60 Q60 65 66 60" stroke="var(--avatar-eye)" stroke-width="1.5" stroke-linecap="round" fill="none"/><rect x="30" y="78" width="18" height="14" rx="2" fill="var(--accent)" opacity="0.8"/><line x1="39" y1="78" x2="39" y2="92" stroke="white" stroke-width="1" opacity="0.5"/><path d="M48 48 Q52 44 56 48 M64 48 Q68 44 72 48" stroke="var(--avatar-eye)" stroke-width="1.2" fill="none"/><line x1="56" y1="48" x2="64" y2="48" stroke="var(--avatar-eye)" stroke-width="1.2"/></svg>`;
+    }
     await dbSet('profile', 'main', np); applyProfile(np); toast('💾 프로필 저장');
   });
 });
@@ -595,6 +602,8 @@ document.querySelectorAll('#panelWriting .filter-btn').forEach(btn => { btn.addE
 const bookshelfEl = document.getElementById('bookshelf-display');
 const bookModal   = document.getElementById('bookModal');
 
+let currentShelfYear = 2026;
+
 function updateBookStats() {
   const now = new Date(), thisYear = now.getFullYear(), thisMonth = now.getMonth() + 1;
   const yearBooks  = BOOK_DATA.filter(b => b.date && parseInt(b.date.split('.')[0]) === thisYear);
@@ -610,18 +619,54 @@ function updateBookStats() {
   document.getElementById('barChart').innerHTML = counts.map((c, i) => `<div class="bar-col"><div class="bar-fill" style="height:${(c/max)*100}%" title="${months[i]}: ${c}권"></div><span class="bar-label">${months[i]}</span></div>`).join('');
 }
 
+/** 전체 기록 모달 */
+document.getElementById('statTotalCard').addEventListener('click', () => {
+  document.getElementById('editModal')?.remove();
+  const modal = document.createElement('div'); modal.id = 'editModal'; modal.className = 'modal-overlay open';
+  const sorted = [...BOOK_DATA].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const grouped = {};
+  sorted.forEach(b => {
+    const year = b.date ? b.date.split('.')[0] : '날짜 없음';
+    if (!grouped[year]) grouped[year] = [];
+    grouped[year].push(b);
+  });
+  const listHtml = Object.entries(grouped).sort((a,b) => b[0].localeCompare(a[0])).map(([year, books]) => `
+    <div class="all-books-year">
+      <h4 class="all-books-year-label">${year}년 · ${books.length}권</h4>
+      ${books.map(b => `
+        <div class="all-books-item" data-bid="${b.id}">
+          <div class="all-books-cover" style="background:${b.color}"></div>
+          <div class="all-books-info">
+            <p class="all-books-title">${b.title}</p>
+            <p class="all-books-author">${b.author} · ${renderStars(b.stars)}</p>
+            <p class="all-books-date">${b.date}</p>
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
+  modal.innerHTML = `<div class="modal edit-modal" style="max-width:600px;"><button class="modal-close" id="editModalClose">✕</button><h3 class="edit-modal-title">📚 전체 독서 기록 (${BOOK_DATA.length}권)</h3><div class="edit-fields all-books-list">${listHtml || '<p style="color:var(--text-faint);text-align:center;padding:20px;">아직 읽은 책이 없어요</p>'}</div></div>`;
+  document.body.appendChild(modal); document.body.style.overflow = 'hidden';
+  const close = () => { modal.remove(); document.body.style.overflow = ''; };
+  modal.querySelector('#editModalClose').addEventListener('click', close);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  modal.querySelectorAll('.all-books-item').forEach(item => {
+    item.addEventListener('click', () => { close(); openBookModal(item.dataset.bid); });
+  });
+});
+
 function createBookSpine(b) {
   return `<div class="book-spine" data-id="${b.id}" style="background:${b.color};width:${b.width || 20}px;"><span class="book-spine-title">${b.title}</span></div>`;
 }
 
 function renderBookshelf() {
   if (!bookshelfEl) return;
+  // 현재 연도 책만 필터
+  const yearBooks = BOOK_DATA.filter(b => b.date && parseInt(b.date.split('.')[0]) === currentShelfYear);
   let html = '';
-  for (let i = 0; i < BOOK_DATA.length; i += 8) {
-    html += `<div class="shelf-row">${BOOK_DATA.slice(i, i + 8).map(createBookSpine).join('')}</div>`;
+  const perRow = 12; // 한 줄에 12권
+  for (let i = 0; i < yearBooks.length; i += perRow) {
+    html += `<div class="shelf-row">${yearBooks.slice(i, i + perRow).map(createBookSpine).join('')}</div>`;
   }
-  // 책이 없으면 빈 선반 하나 표시
-  if (!BOOK_DATA.length) html = `<div class="shelf-row" style="justify-content:center;align-items:center;"><p style="font-size:.85rem;color:var(--text-faint);padding:20px 0;">아직 읽은 책이 없어요 📚</p></div>`;
+  if (!yearBooks.length) html = `<div class="shelf-row empty-shelf"><p style="font-size:.85rem;color:var(--text-faint);padding:30px 0;">${currentShelfYear}년에 읽은 책이 없어요 📚</p></div>`;
   bookshelfEl.innerHTML = html;
   bookshelfEl.querySelectorAll('.book-spine').forEach(s => {
     s.addEventListener('click', () => {
@@ -630,6 +675,16 @@ function renderBookshelf() {
   });
   updateBookStats();
 }
+
+// 연도 탭 클릭
+document.getElementById('bookshelfYearTabs').addEventListener('click', e => {
+  const tab = e.target.closest('.year-tab');
+  if (!tab) return;
+  document.querySelectorAll('.year-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  currentShelfYear = parseInt(tab.dataset.year);
+  renderBookshelf();
+});
 
 function showBookAdminMenu(b, anchor) {
   document.querySelector('.book-admin-menu')?.remove();
