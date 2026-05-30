@@ -1,3 +1,5 @@
+bash
+
 cat > /mnt/user-data/outputs/app.js << 'JSEOF'
 /**
  * app.js — 개인 아카이브 (Firebase + Storage + 실제 mp3 재생)
